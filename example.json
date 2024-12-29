@@ -1,0 +1,31 @@
+[
+    {
+      "id": "msg1",
+      "role": "assistant",
+      "type": "text",
+      "content": "Hello! What topic do you want to learn?"
+    },
+    {
+      "id": "msg2",
+      "role": "user",
+      "type": "text",
+      "content": "React Hooks."
+    },
+    {
+      "id": "msg3",
+      "role": "assistant",
+      "type": "multiple-choice",
+      "content": "Before diving into React Hooks, let's check your background.",
+      "choices": [
+        "Beginner with React",
+        "Comfortable with React",
+        "Advanced with React"
+      ]
+    },
+    {
+      "id": "msg4",
+      "role": "assistant",
+      "type": "text",
+      "content": "Great! Let's move on to useState..."
+    }
+  ]
