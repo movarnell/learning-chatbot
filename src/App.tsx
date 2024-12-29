@@ -1,11 +1,16 @@
-import "./App.css";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Home from './Home';
+import About from './About';
+import Chat from './Chat';
 
-function App() {
+export default function App() {
   return (
-    <>
-      <div></div>
-    </>
+    <BrowserRouter>
+      <Routes>
+         <Route path="/" element={<Home />} /> {/* Homepage asks the user what they want to learn */}
+         <Route path="chat" element={<Chat />} /> {/* Chat page */}
+        <Route path="about" element={<About />} /> {/* About page */}
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
