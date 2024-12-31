@@ -54,7 +54,7 @@ function formatChatText(text: string) {
         // End of code block
         inCodeBlock = false;
         formatted.push(
-          <pre key={`code-${index}`} className="bg-gray-800 text-white p-4 rounded my-2 overflow-x-auto">
+          <pre key={`code-${index}`} className="p-4 my-2 overflow-x-auto text-white bg-gray-800 rounded">
             <code className={`language-${language || 'plaintext'}`}>
               {codeContent.trim()}
             </code>
@@ -92,6 +92,9 @@ export default function Chat() {
   const [readyForQuestions, setReadyForQuestions] = useState(false);
   const [hasQuestions, setHasQuestions] = useState(false);
   const [readMessages, setReadMessages] = useState<Set<string>>(new Set());
+  const [currentQuestionMessageId, setCurrentQuestionMessageId] = useState<string | null>(null);
+  const [hasUnreadQuestions, setHasUnreadQuestions] = useState(false);
+  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const MAX_MESSAGES = 20; // Maximum number of messages to keep in history
 
   const shouldShowQuestions = hasQuestions && readyForQuestions;
@@ -122,23 +125,24 @@ export default function Chat() {
       throw new Error('Invalid API response structure.');
     }
 
-    // Clean and format the message content
     const content = assistantMessage.content.trim();
     const parsedQuestions = parseQuestions(content);
 
-    // Update hasQuestions if we find questions in the response
     if (parsedQuestions) {
       setHasQuestions(true);
+      setHasUnreadQuestions(true);
+      setAllQuestions(prev => [...prev, ...parsedQuestions]);
     }
 
     return {
       content,
       questions: parsedQuestions,
-      id: Date.now().toString() // Add unique ID
+      id: Date.now().toString()
     };
   }
 
   async function startConversation() {
+    setAllQuestions([]);
     setIsLoading(true);
     try {
       const requestBody = {
@@ -254,7 +258,7 @@ export default function Chat() {
 
       if (questions) {
         setQuestions(questions);
-        setShowQuestions(true);
+        // setShowQuestions(true);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -269,77 +273,68 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col h-screen p-4">
-      <h1 className="text-2xl mb-4">Chat about: {topic}</h1>
-      <div className="flex-1 overflow-y-auto flex flex-col space-y-2 mb-4 border p-2 rounded">
-        {messages.map((msg, i) => (
-          <div key={i} className="flex flex-col">
-            <div
-              className={`p-2 rounded ${
-                msg.role === 'assistant'
-                  ? 'bg-gray-200 self-start max-w-3xl'
-                  : 'bg-blue-500 text-white self-end max-w-md'
-              }`}
-            >
-              {formatChatText(msg.content)}
-            </div>
-            {msg.role === 'assistant' && msg.id && msg.hasQuestions && !readMessages.has(msg.id) && (
-              <button
-                onClick={() => handleMarkAsRead(msg.id!)}
-                className="bg-blue-400 text-white px-4 py-2 rounded mt-2 self-start"
-              >
-                I've Read This and I'm Ready for Questions
-              </button>
-            )}
-            {msg.role === 'assistant' && msg.id && msg.hasQuestions && readMessages.has(msg.id) && !showQuestions && (
-              <button
-                onClick={() => setShowQuestions(true)}
-                className="bg-green-500 text-white px-4 py-2 rounded mt-2 self-start"
-              >
-                Take Quiz
-              </button>
-            )}
+    <div className="flex flex-col h-screen">
+      <div className="flex-1 p-4 overflow-y-auto">
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`mb-4 p-4 rounded-lg ${
+              msg.role === 'user'
+                ? 'bg-blue-500 text-white self-end max-w-md'
+                : 'bg-gray-200 self-start max-w-3xl'
+            }`}
+          >
+            {formatChatText(msg.content)}
           </div>
         ))}
-        {isLoading && (
-          <div className="self-start bg-gray-100 p-2 rounded">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-            </div>
-          </div>
-        )}
       </div>
-      <div className="flex space-x-2 mb-4">
-        <input
-          className="border p-2 flex-1"
-          value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-        />
-        <button
-          className="bg-blue-500 text-white px-4 py-2"
-          onClick={handleUserMessage}
-        >
-          Send
-        </button>
-      </div>
-      <div className="flex flex-col space-y-2">
-        <button
-          className="bg-gray-500 text-white px-4 py-2"
-          onClick={() => navigate('/')}
-        >
-          Back Home
-        </button>
+
+      {/* Add button at bottom */}
+      {hasUnreadQuestions && (
+        <div className="p-4 border-t">
+          <button
+            onClick={() => {
+              if (allQuestions.length > 0) {
+                setQuestions(allQuestions);
+                setShowQuestions(true);
+              }
+            }}
+            className="w-full px-4 py-2 text-white transition-colors bg-blue-500 rounded hover:bg-blue-600"
+          >
+            Show All Questions
+          </button>
+        </div>
+      )}
+
+      {/* Input area */}
+      <div className="p-4 border-t">
+        <div className="flex mb-4 space-x-2">
+          <input
+            className="flex-1 p-2 border"
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+          />
+          <button
+            className="px-4 py-2 text-white bg-blue-500"
+            onClick={handleUserMessage}
+          >
+            Send
+          </button>
+        </div>
+        <div className="flex flex-col space-y-2">
+          <button
+            className="px-4 py-2 text-white bg-gray-500"
+            onClick={() => navigate('/')}
+          >
+            Back Home
+          </button>
+        </div>
       </div>
       {showQuestions && questions && (
         <MultipleChoice
           questions={questions}
           onClose={() => {
             setShowQuestions(false);
-            setQuestions(null);
-            setReadyForQuestions(false);
-            setHasQuestions(false);
           }}
         />
       )}
